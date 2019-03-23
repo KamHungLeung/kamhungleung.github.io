@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+
+  
+  <title>Objc内存管理（二） | Hung&#39;s Tech Tips</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="ARC的实现 这一节将围绕clang汇编输出和obj4库的源码进行说明">
+<meta name="keywords" content="内存管理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Objc内存管理（二）">
+<meta property="og:url" content="http://yoursite.com/2019/03/23/Objc内存管理（二）/index.html">
+<meta property="og:site_name" content="Hung&#39;s Tech Tips">
+<meta property="og:description" content="ARC的实现 这一节将围绕clang汇编输出和obj4库的源码进行说明">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-03-23T14:59:34.518Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Objc内存管理（二）">
+<meta name="twitter:description" content="ARC的实现 这一节将围绕clang汇编输出和obj4库的源码进行说明">
+  
+    <link rel="alternate" href="/atom.xml" title="Hung&#39;s Tech Tips" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hung&#39;s Tech Tips</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Walk it, like I talk it</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Objc内存管理（二）" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/03/23/Objc内存管理（二）/" class="article-date">
+  <time datetime="2019-03-23T15:00:00.000Z" itemprop="datePublished">2019-03-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/iOS开发/">iOS开发</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Objc内存管理（二）
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="ARC的实现"><a href="#ARC的实现" class="headerlink" title="ARC的实现"></a>ARC的实现</h2><blockquote>
+<p>这一节将围绕<code>clang</code>汇编输出和<code>obj4</code>库的源码进行说明</p>
+</blockquote>
+<a id="more"></a>
+<h3 id="strong修饰符"><a href="#strong修饰符" class="headerlink" title="__strong修饰符"></a>__strong修饰符</h3><ul>
+<li>以下代码为模拟源代码，ARC有效时不能调用<code>release</code>方法，但可以看到编译器自动插入了该方法</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="keyword">id</span> __<span class="keyword">strong</span> obj = [[<span class="built_in">NSObject</span> alloc] init];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* 编译器模拟代码 */</span></span><br><span class="line"><span class="keyword">id</span> obj = objc_msgSend(<span class="built_in">NSObject</span>, <span class="keyword">@selector</span>(alloc));</span><br><span class="line">objc_msgSend(obj, <span class="keyword">@selector</span>(init));</span><br><span class="line"><span class="comment">// 变量作用域结束，释放对象</span></span><br><span class="line">objc_release(obj);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>以下为使用<code>alloc/new/copy/mutableCopy</code>以外的方法的情况，与前一种情况的区别在于中间的<code>objc_retainAutoreleasedReturnValue</code>函数，它是用于<strong>自己持有</strong>对象的函数。</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="keyword">id</span> __<span class="keyword">strong</span> obj = [<span class="built_in">NSMutableArray</span> array];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* 编译器模拟代码 */</span></span><br><span class="line"><span class="keyword">id</span> obj = objc_msgSend(<span class="built_in">NSMutableArray</span>, <span class="keyword">@selector</span>(array));</span><br><span class="line">objc_retainAutoreleasedReturnValue(obj);</span><br><span class="line">objc_release(obj);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>在如<code>array</code>类方法等返回对象的实现上，用到的函数是<code>objc_autoreleaseReturnValue</code>。该函数会检查使用该函数的方法或函数调用方的执行命令列表，如果调用方在调用了方法或函数后<strong>接着调用</strong><code>objc_retainAutoreleasedReturnValue</code>函数，那么就不将返回的对象注册到<code>autoreleasepool</code>中，而是<strong>直接传递</strong>到方法或函数的调用方。</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">id</span>) array</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">return</span> [[<span class="built_in">NSMutableArray</span> alloc] init];</span><br><span class="line">	</span><br><span class="line">	<span class="comment">/* 等价于 */</span></span><br><span class="line">	<span class="keyword">id</span> obj = obj_msgSend(<span class="built_in">NSMutableArray</span>, <span class="keyword">@selector</span>(alloc));</span><br><span class="line">	objc_msgSend(obj, <span class="keyword">@selector</span>(init));</span><br><span class="line">	<span class="keyword">return</span> objc_autoreleaseReturnValue(obj);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="weak修饰符"><a href="#weak修饰符" class="headerlink" title="__weak修饰符"></a>__weak修饰符</h3><p><code>__weak</code>修饰符的功能主要有两点：</p>
+<ul>
+<li>若附有<code>__weak</code>修饰符的变量所引用的对象被废弃，则将<code>nil</code><strong>赋值</strong>给该变量</li>
+<li>使用附有<code>__weak</code>修饰符的变量，即是使用注册到<code>autoreleasepool</code>中的对象</li>
+</ul>
+<p>同样的，我们来看看编译器的模拟代码</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="comment">// 假设obj附加__strong修饰符且对象被赋值</span></span><br><span class="line">	<span class="keyword">id</span> __<span class="keyword">weak</span> obj1 = obj;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* 编译器模拟代码 */</span></span><br><span class="line">	<span class="keyword">id</span> obj1;</span><br><span class="line">	objc_initWeak(&amp;obj1, obj);</span><br><span class="line">	<span class="comment">// 变量作用域结束时释放变量</span></span><br><span class="line">	objc_destroyWeak(&amp;obj1);</span><br></pre></td></tr></table></figure>
+<p>等价于以下代码</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">id</span> obj1;</span><br><span class="line">obj1 = <span class="number">0</span>;</span><br><span class="line">objc_storeWeak(&amp;obj1, obj);</span><br><span class="line">objc_storeWeak(&amp;obj1, <span class="number">0</span>);</span><br></pre></td></tr></table></figure>
+<p><code>objc_storeWeak</code>函数把第二参数的赋值对象的地址作为键值，将第一参数的附有<code>__weak</code>修饰符的<strong>变量的地址</strong>注册到weak表中。如果第二参数<strong>为0</strong>，则把变量的地址枞weak表中删除。<br>weak表与引用计数表都是用哈希表实现的。用废弃对象的地址作为键值进行检索，就能高速地获取对应的附有<code>__weak</code>修饰符的变量地址。<br>释放对象时，废弃谁都不持有的对象步骤如下：</p>
+<ol>
+<li><code>objc_release</code></li>
+<li>引用计数为0，执行<code>dealloc</code></li>
+<li><code>_objc_rootDealloc</code></li>
+<li><code>object_dispose</code></li>
+<li><code>objc_destructInstance</code></li>
+<li><code>objc_clear_deallocating</code></li>
+</ol>
+<p>最后一步可分解为：</p>
+<ol>
+<li>从weak表中获取废弃对象的地址为键值记录</li>
+<li>将包含在记录中的所有附有<code>__weak</code>修饰符变量的地址，赋值为nil</li>
+<li>从weak表中删除该记录</li>
+<li>从引用计数表中删除废弃对象的地址为键值的记录</li>
+</ol>
+<p>可以看到带有<code>__weak</code>修饰符的变量所引用的对象被废弃，则将该变量置为<code>nil</code>的这一过程会被执行。如果大量使用<code>__weak</code>修饰的变量，会消耗相应的CPU资源，所以只在需要避免循环引用时使用该修饰符。<br>使用附有<code>__weak</code>修饰符的变量，即是使用注册到<code>autoreleasepool</code>中的对象</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="keyword">id</span> __<span class="keyword">weak</span> obj1 = obj;</span><br><span class="line">	<span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, obj1);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* 编译器模拟代码 */</span></span><br><span class="line"><span class="keyword">id</span> obj1;</span><br><span class="line">objc_initWeak(&amp;obj1, obj);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 取出附有__weak修饰符变量所引用的对象并retain</span></span><br><span class="line"><span class="keyword">id</span> tmp = objc_loadWeakRetained(&amp;obj1);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册到autoreleasepool中</span></span><br><span class="line">objc_autorelease(tmp);</span><br><span class="line"></span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, tmp);</span><br><span class="line">objc_destroyWeak(&amp;obj1);</span><br></pre></td></tr></table></figure>
+<h3 id="autoreleasing修饰符"><a href="#autoreleasing修饰符" class="headerlink" title="__autoreleasing修饰符"></a>__autoreleasing修饰符</h3><p>将对象赋值给附有<code>__autoreleasing</code>修饰符的变量等同于ARC无效时调用对象的autorelease方法。从以下的代码中可以看到，无论ARC有没有效，<code>autorelease</code>的功能时完全一样的</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">@autoreleasepool</span> &#123;</span><br><span class="line">	<span class="keyword">id</span> __autoreleasing obj = [[<span class="built_in">NSObject</span> alloc] init];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* 编译器模拟代码 */</span></span><br><span class="line"><span class="keyword">id</span> pool = objc_autoreleasePoolPush();</span><br><span class="line"><span class="keyword">id</span> obj = objc_msgSend(<span class="built_in">NSObject</span>, <span class="keyword">@selector</span>(alloc));</span><br><span class="line">objc_msgSend(obj, <span class="keyword">@selector</span>(init));</span><br><span class="line">objc_autorelease(obj);</span><br><span class="line">objc_autoreleasePoolPop(pool);</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/03/23/Objc内存管理（二）/" data-id="cjtlme6210000uoev8bdckls7" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/内存管理/">内存管理</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2019/03/23/Objc内存管理（一）/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Objc内存管理（一）</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/iOS开发/">iOS开发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/内存管理/">内存管理</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/内存管理/" style="font-size: 10px;">内存管理</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/03/23/Objc内存管理（二）/">Objc内存管理（二）</a>
+          </li>
+        
+          <li>
+            <a href="/2019/03/23/Objc内存管理（一）/">Objc内存管理（一）</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 KamHungLeung<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+
+
+  </div>
+</body>
+</html>
