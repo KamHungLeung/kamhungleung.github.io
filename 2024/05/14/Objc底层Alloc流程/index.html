@@ -19,23 +19,27 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.20.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
 
-    <meta property="og:type" content="website">
-<meta property="og:title" content="Hung&#39;s Tech Tips">
-<meta property="og:url" content="http://example.com/index.html">
+    <meta name="description" content="Objc底层 alloc流程记录 引用Objc开源版本为906.2  1. callAlloc12345678910111213141516static ALWAYS_INLINE idcallAlloc(Class cls, bool checkNil, bool allocWithZone&#x3D;false)&#123;    &#x2F;&#x2F; 编译优化，cls一般不为空，该判断为false概率较大    if">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Objc底层Alloc流程">
+<meta property="og:url" content="http://example.com/2024/05/14/Objc%E5%BA%95%E5%B1%82Alloc%E6%B5%81%E7%A8%8B/index.html">
 <meta property="og:site_name" content="Hung&#39;s Tech Tips">
+<meta property="og:description" content="Objc底层 alloc流程记录 引用Objc开源版本为906.2  1. callAlloc12345678910111213141516static ALWAYS_INLINE idcallAlloc(Class cls, bool checkNil, bool allocWithZone&#x3D;false)&#123;    &#x2F;&#x2F; 编译优化，cls一般不为空，该判断为false概率较大    if">
 <meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2024-05-14T12:24:40.818Z">
+<meta property="article:modified_time" content="2024-05-14T12:52:42.226Z">
 <meta property="article:author" content="KamHungLeung">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="http://example.com/">
+<link rel="canonical" href="http://example.com/2024/05/14/Objc%E5%BA%95%E5%B1%82Alloc%E6%B5%81%E7%A8%8B/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"en","comments":"","permalink":"","path":"index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2024/05/14/Objc%E5%BA%95%E5%B1%82Alloc%E6%B5%81%E7%A8%8B/","path":"2024/05/14/Objc底层Alloc流程/","title":"Objc底层Alloc流程"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>Hung's Tech Tips</title>
+<title>Objc底层Alloc流程 | Hung's Tech Tips</title>
   
 
 
@@ -65,7 +69,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">Hung's Tech Tips</h1>
+      <p class="site-title">Hung's Tech Tips</p>
       <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">Walk it, like I talk it</p>
@@ -88,7 +92,7 @@
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -101,6 +105,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Objc%E5%BA%95%E5%B1%82-alloc%E6%B5%81%E7%A8%8B%E8%AE%B0%E5%BD%95"><span class="nav-number">1.</span> <span class="nav-text">Objc底层 alloc流程记录</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-callAlloc"><span class="nav-number">1.1.</span> <span class="nav-text">1. callAlloc</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-class-createInstance"><span class="nav-number">1.2.</span> <span class="nav-text">2. _class_createInstance</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%AD%97%E8%8A%82%E5%AF%B9%E9%BD%90%E4%BB%A5%E5%8F%8A%E5%AF%B9%E9%BD%90%E8%A7%84%E5%88%99"><span class="nav-number">1.2.1.</span> <span class="nav-text">为什么要字节对齐以及对齐规则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#instanceSize"><span class="nav-number">1.2.2.</span> <span class="nav-text">instanceSize</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#malloc-instance"><span class="nav-number">1.2.3.</span> <span class="nav-text">malloc_instance</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#initInstanceIsa"><span class="nav-number">1.2.4.</span> <span class="nav-text">initInstanceIsa</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.3.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -130,16 +135,17 @@
 
     </div>
 
-    <div class="main-inner index posts-expand">
+    <div class="main-inner post posts-expand">
 
-    
+
+  
 
 
 <div class="post-block">
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/14/Objc%E5%BA%95%E5%B1%82Alloc%E6%B5%81%E7%A8%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -153,13 +159,13 @@
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | Hung's Tech Tips">
+      <meta itemprop="name" content="Objc底层Alloc流程 | Hung's Tech Tips">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2024/05/14/Objc%E5%BA%95%E5%B1%82Alloc%E6%B5%81%E7%A8%8B/" class="post-title-link" itemprop="url">Objc底层Alloc流程</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          Objc底层Alloc流程
+        </h1>
 
         <div class="post-meta-container">
           <div class="post-meta">
@@ -182,8 +188,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Objc底层-alloc流程记录"><a href="#Objc底层-alloc流程记录" class="headerlink" title="Objc底层 alloc流程记录"></a>Objc底层 alloc流程记录</h2><blockquote>
+    <div class="post-body" itemprop="articleBody"><h2 id="Objc底层-alloc流程记录"><a href="#Objc底层-alloc流程记录" class="headerlink" title="Objc底层 alloc流程记录"></a>Objc底层 alloc流程记录</h2><blockquote>
 <p>引用Objc开源版本为906.2</p>
 </blockquote>
 <h3 id="1-callAlloc"><a href="#1-callAlloc" class="headerlink" title="1. callAlloc"></a>1. callAlloc</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> ALWAYS_INLINE <span class="type">id</span></span><br><span class="line">callAlloc(Class cls, <span class="type">bool</span> checkNil, <span class="type">bool</span> allocWithZone=<span class="literal">false</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 编译优化，cls一般不为空，该判断为false概率较大</span></span><br><span class="line">    <span class="keyword">if</span> (slowpath(checkNil &amp;&amp; !cls)) <span class="keyword">return</span> <span class="literal">nil</span>;</span><br><span class="line">    <span class="comment">// 判断一个类是否有自定义的allocWithZone</span></span><br><span class="line">    <span class="keyword">if</span> (fastpath(!cls-&gt;ISA()-&gt;hasCustomAWZ())) &#123;</span><br><span class="line">        <span class="keyword">return</span> _objc_rootAllocWithZone(cls, <span class="literal">nil</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// No shortcuts available.</span></span><br><span class="line">    <span class="keyword">if</span> (allocWithZone) &#123;</span><br><span class="line">        <span class="keyword">return</span> ((<span class="type">id</span>(*)(<span class="type">id</span>, SEL, <span class="keyword">struct</span> _NSZone *))objc_msgSend)(cls, <span class="keyword">@selector</span>(allocWithZone:), <span class="literal">nil</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ((<span class="type">id</span>(*)(<span class="type">id</span>, SEL))objc_msgSend)(cls, <span class="keyword">@selector</span>(alloc));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -216,7 +221,6 @@
 <p>大概流程就是初始化一个isa，让isa与类进行关联，并指向申请的内存地址。执行完这一步可以在lldb中把对象po出来，可以看到输出的信息中除了内存地址，类名也带上了。</p>
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>alloc流程看下来主要是三步，首先是计算需要的内存大小，计算过程需要进行16字节对齐，分配好内存后初始化isa关联类的信息。</p>
 
-      
     </div>
 
     
@@ -224,11 +228,13 @@
     
 
     <footer class="post-footer">
-        <div class="post-eof"></div>
-      
+
+        
+
     </footer>
   </article>
 </div>
+
 
 
 
