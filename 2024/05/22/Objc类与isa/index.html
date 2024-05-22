@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.2.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha256-XOqroi11tY4EFQMR9ZYwZWKj5ZXiftSx36RRuC3anlA=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.20.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="类与isa关联原理Objc对象的本质oc定义的类在经过Clang编译转为C++后，我们就可以看到oc中的类实际上是结构体，如下： 12345678910&#x2F;&#x2F; NSObject的定义struct NSObject_IMPL &#123;	Class isa;&#125;;&#x2F;&#x2F; 继承自NSObject的TestClass的定义struct TestClass_IMPL &#123;	struct NS">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Objc类与isa">
+<meta property="og:url" content="http://example.com/2024/05/22/Objc%E7%B1%BB%E4%B8%8Eisa/index.html">
+<meta property="og:site_name" content="Hung&#39;s Tech Tips">
+<meta property="og:description" content="类与isa关联原理Objc对象的本质oc定义的类在经过Clang编译转为C++后，我们就可以看到oc中的类实际上是结构体，如下： 12345678910&#x2F;&#x2F; NSObject的定义struct NSObject_IMPL &#123;	Class isa;&#125;;&#x2F;&#x2F; 继承自NSObject的TestClass的定义struct TestClass_IMPL &#123;	struct NS">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2024-05-22T13:41:42.215Z">
+<meta property="article:modified_time" content="2024-05-22T13:57:54.726Z">
+<meta property="article:author" content="KamHungLeung">
+<meta property="article:tag" content="isa">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2024/05/22/Objc%E7%B1%BB%E4%B8%8Eisa/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2024/05/22/Objc%E7%B1%BB%E4%B8%8Eisa/","path":"2024/05/22/Objc类与isa/","title":"Objc类与isa"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Objc类与isa | Hung's Tech Tips</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Hung's Tech Tips</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Walk it, like I talk it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B1%BB%E4%B8%8Eisa%E5%85%B3%E8%81%94%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">类与isa关联原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Objc%E5%AF%B9%E8%B1%A1%E7%9A%84%E6%9C%AC%E8%B4%A8"><span class="nav-number">1.1.</span> <span class="nav-text">Objc对象的本质</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#objc-setProperty%E6%B5%81%E7%A8%8B"><span class="nav-number">1.2.</span> <span class="nav-text">objc_setProperty流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cls%E4%B8%8E%E7%B1%BB%E5%85%B3%E8%81%94%E5%8E%9F%E7%90%86"><span class="nav-number">1.3.</span> <span class="nav-text">cls与类关联原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#initIsa"><span class="nav-number">1.3.1.</span> <span class="nav-text">initIsa</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#getClass"><span class="nav-number">1.3.2.</span> <span class="nav-text">getClass</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">KamHungLeung</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/22/Objc%E7%B1%BB%E4%B8%8Eisa/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="KamHungLeung">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hung's Tech Tips">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Objc类与isa | Hung's Tech Tips">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Objc类与isa
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2024-05-22 21:41:42 / Modified: 21:57:54" itemprop="dateCreated datePublished" datetime="2024-05-22T21:41:42+08:00">2024-05-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Objc/" itemprop="url" rel="index"><span itemprop="name">Objc</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="类与isa关联原理"><a href="#类与isa关联原理" class="headerlink" title="类与isa关联原理"></a>类与isa关联原理</h2><h3 id="Objc对象的本质"><a href="#Objc对象的本质" class="headerlink" title="Objc对象的本质"></a>Objc对象的本质</h3><p>oc定义的类在经过<code>Clang</code>编译转为C++后，我们就可以看到oc中的类实际上是结构体，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NSObject的定义</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">NSObject_IMPL</span> &#123;</span><br><span class="line">	Class isa;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 继承自NSObject的TestClass的定义</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">TestClass_IMPL</span> &#123;</span><br><span class="line">	<span class="keyword">struct</span> <span class="title class_">NSObject_IMPL</span> NSObject_IVARS;</span><br><span class="line">	NSString *_name;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>上面转译出来的代码中，可以看到<code>TestClass</code>结构体里面包含它所继承的<code>NSObject</code>的完整结构。而oc对象的本质其实就是结构体，子类中包含完整的父类结构体，从而达到继承的目的。</p>
+<span id="more"></span>
+
+<h3 id="objc-setProperty流程"><a href="#objc-setProperty流程" class="headerlink" title="objc_setProperty流程"></a>objc_setProperty流程</h3><p>转译出来的代码中，在类结构体的定义下面还能看到属性的<code>setter</code>和<code>getter</code>，这里我们着重了解<code>setter</code>的实现，因为与本文后续的内容有关。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> _I_TestClass_setName_(TestClass * self, SEL _cmd, NSString *name) &#123; <span class="built_in">objc_setProperty</span> (self, _cmd, __OFFSETOFIVAR__(<span class="keyword">struct</span> TestClass, _name), (id)name, <span class="number">0</span>, <span class="number">1</span>); &#125;</span><br></pre></td></tr></table></figure>
+
+<p>OC给属性生成的<code>setter</code>其实都是对<code>objc_setProperty</code>这个方法的封装。入参里面值得注意的是它要求外层调用时，传入类对象实例本身和属性的偏移，偏移通过<code>__OFFSETOFIVAR__</code>传入类和属性名来计算。完整的实现如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> __OFFSETOFIVAR__(TYPE, MEMBER) ((long long) &amp;((TYPE *)0)-&gt;MEMBER)</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">void</span> <span class="title">reallySetProperty</span><span class="params">(id self, SEL _cmd, id newValue, <span class="type">ptrdiff_t</span> offset, <span class="type">bool</span> atomic, <span class="type">bool</span> copy, <span class="type">bool</span> mutableCopy)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (offset == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// 设置isa信息</span></span><br><span class="line">        <span class="built_in">object_setClass</span>(self, newValue);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    id oldValue;</span><br><span class="line">    id *slot = (id*) ((<span class="type">char</span>*)self + offset);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (copy) &#123;</span><br><span class="line">        newValue = [newValue copyWithZone:nil];</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (mutableCopy) &#123;</span><br><span class="line">        newValue = [newValue mutableCopyWithZone:nil];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (*slot == newValue) <span class="keyword">return</span>;</span><br><span class="line">        newValue = <span class="built_in">objc_retain</span>(newValue);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!atomic) &#123;</span><br><span class="line">        oldValue = *slot;</span><br><span class="line">        *slot = newValue;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="type">spinlock_t</span>&amp; slotlock = PropertyLocks[slot];</span><br><span class="line">        slotlock.<span class="built_in">lock</span>();</span><br><span class="line">        oldValue = *slot;</span><br><span class="line">        *slot = newValue;        </span><br><span class="line">        slotlock.<span class="built_in">unlock</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">objc_release</span>(oldValue);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>reallySetProperty</code>接口可以关联上层set方法和底层set方法，上层定义的属性类型有很多，如果都直接调用底层set方法，会产生很多临时变量，影响代码可读性和可维护性。这里用到了<code>适配器模式</code>的设计思想，上下层接口隔离，想互不影响。</p>
+<h3 id="cls与类关联原理"><a href="#cls与类关联原理" class="headerlink" title="cls与类关联原理"></a>cls与类关联原理</h3><p>下面是<code>isa_t</code>的定义，它是isa指针的类型，从定义中可以看到它用到了<code>union</code>。这里简单介绍一下<code>union</code>这种结构，它也是由不同数据类型组成的，但所有成员<code>共同占用一段内存</code>，成员间是互斥的关系，即<code>同一时刻只保留一个成员的值</code>，所以包容性弱，但能带来内存占用上的优势。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">union</span> <span class="title class_">isa_t</span> &#123;</span><br><span class="line">    <span class="built_in">isa_t</span>() &#123; &#125;</span><br><span class="line">    <span class="built_in">isa_t</span>(<span class="type">uintptr_t</span> value) : <span class="built_in">bits</span>(value) &#123; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">uintptr_t</span> bits;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="comment">// 出于安全性的考虑，防止对象类信息被恶意篡改，访问cls需要进行指针验证</span></span><br><span class="line">    <span class="comment">// 因此cls变量定义成私有变量，只能通过setClass和getClass进行访问</span></span><br><span class="line">    Class cls;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(ISA_BITFIELD)</span></span><br><span class="line">    <span class="keyword">struct</span> &#123;</span><br><span class="line">        ISA_BITFIELD;  <span class="comment">// defined in isa.h</span></span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> ISA_HAS_INLINE_RC</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">isDeallocating</span><span class="params">()</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> extra_rc == <span class="number">0</span> &amp;&amp; has_sidetable_rc == <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">setDeallocating</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        extra_rc = <span class="number">0</span>;</span><br><span class="line">        has_sidetable_rc = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span> <span class="comment">// ISA_HAS_INLINE_RC</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">setClass</span><span class="params">(Class cls, objc_object *obj)</span></span>;</span><br><span class="line">    <span class="function">Class <span class="title">getClass</span><span class="params">(<span class="type">bool</span> authenticated)</span> <span class="type">const</span></span>;</span><br><span class="line">    <span class="function">Class <span class="title">getDecodedClass</span><span class="params">(<span class="type">bool</span> authenticated)</span> <span class="type">const</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><code>isa_t</code>定义了两个互斥的成员变量<code>cls</code>和<code>bits</code>，还提供了一个匿名的内嵌结构体，里面的宏定义<code>ISA_BITFIELD</code>用于描述<code>bits</code>各段所代表的含义，在<code>isa.h</code>中可以看到定义。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#       <span class="keyword">define</span> ISA_BITFIELD                                                        \</span></span><br><span class="line"><span class="meta">          uintptr_t nonpointer        : 1;                                         \</span></span><br><span class="line"><span class="meta">          uintptr_t has_assoc         : 1;                                         \</span></span><br><span class="line"><span class="meta">          uintptr_t has_cxx_dtor      : 1;                                         \</span></span><br><span class="line"><span class="meta">          <span class="comment">/*存储类信息*/</span></span></span><br><span class="line">          <span class="type">uintptr_t</span> shiftcls          : <span class="number">44</span>; <span class="comment">/*MACH_VM_MAX_ADDRESS 0x7fffffe00000*/</span> \</span><br><span class="line">          <span class="type">uintptr_t</span> magic             : <span class="number">6</span>;                                         \</span><br><span class="line">          <span class="type">uintptr_t</span> weakly_referenced : <span class="number">1</span>;                                         \</span><br><span class="line">          <span class="type">uintptr_t</span> unused            : <span class="number">1</span>;                                         \</span><br><span class="line">          <span class="comment">/*使用用到sidetable来存引用计数*/</span></span><br><span class="line">          <span class="type">uintptr_t</span> has_sidetable_rc  : <span class="number">1</span>;                                         \</span><br><span class="line">          <span class="comment">/*额外的引用计数*/</span></span><br><span class="line">          <span class="type">uintptr_t</span> extra_rc          : <span class="number">8</span> </span><br></pre></td></tr></table></figure>
+
+<h4 id="initIsa"><a href="#initIsa" class="headerlink" title="initIsa"></a>initIsa</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> <span class="type">void</span> </span></span><br><span class="line"><span class="function"><span class="title">objc_object::initIsa</span><span class="params">(Class cls, <span class="type">bool</span> nonpointer, UNUSED_WITHOUT_INDEXED_ISA_AND_DTOR_BIT <span class="type">bool</span> hasCxxDtor)</span></span></span><br><span class="line"><span class="function"></span>&#123; </span><br><span class="line">    <span class="built_in">ASSERT</span>(!<span class="built_in">isTaggedPointer</span>()); </span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">isa_t</span> <span class="title">newisa</span><span class="params">(<span class="number">0</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!nonpointer) &#123;</span><br><span class="line">        newisa.<span class="built_in">setClass</span>(cls, <span class="keyword">this</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">ASSERT</span>(!DisableNonpointerIsa);</span><br><span class="line">        <span class="built_in">ASSERT</span>(!cls-&gt;<span class="built_in">instancesRequireRawIsa</span>());</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> SUPPORT_INDEXED_ISA</span></span><br><span class="line">        <span class="built_in">ASSERT</span>(cls-&gt;<span class="built_in">classArrayIndex</span>() &gt; <span class="number">0</span>);</span><br><span class="line">        newisa.bits = ISA_INDEX_MAGIC_VALUE;</span><br><span class="line">        <span class="comment">// isa.magic is part of ISA_MAGIC_VALUE</span></span><br><span class="line">        <span class="comment">// isa.nonpointer is part of ISA_MAGIC_VALUE</span></span><br><span class="line">        newisa.has_cxx_dtor = hasCxxDtor;</span><br><span class="line">        newisa.indexcls = (<span class="type">uintptr_t</span>)cls-&gt;<span class="built_in">classArrayIndex</span>();</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line">        newisa.bits = ISA_MAGIC_VALUE;</span><br><span class="line">        <span class="comment">// isa.magic is part of ISA_MAGIC_VALUE</span></span><br><span class="line">        <span class="comment">// isa.nonpointer is part of ISA_MAGIC_VALUE</span></span><br><span class="line"><span class="meta">#   <span class="keyword">if</span> ISA_HAS_CXX_DTOR_BIT</span></span><br><span class="line">        newisa.has_cxx_dtor = hasCxxDtor;</span><br><span class="line"><span class="meta">#   <span class="keyword">endif</span></span></span><br><span class="line">        newisa.<span class="built_in">setClass</span>(cls, <span class="keyword">this</span>);</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> ISA_HAS_INLINE_RC</span></span><br><span class="line">        newisa.extra_rc = <span class="number">1</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// This write must be performed in a single store in some cases</span></span><br><span class="line">    <span class="comment">// (for example when realizing a class because other threads</span></span><br><span class="line">    <span class="comment">// may simultaneously try to use the class).</span></span><br><span class="line">    <span class="comment">// fixme use atomics here to guarantee single-store and to</span></span><br><span class="line">    <span class="comment">// guarantee memory order w.r.t. the class index table</span></span><br><span class="line">    <span class="comment">// ...but not too atomic because we don&#x27;t want to hurt instantiation</span></span><br><span class="line">    <span class="built_in">isa</span>() = newisa;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>cls与类关联的核心逻辑，根据<code>nonpointer</code>这个变量划分成两部分，通过<code>cls</code>初始化和通过<code>bits</code>初始化。在与类信息相关的部分逻辑是相似的，都是通过<code>setClass</code>给<code>shiftcls</code>字段赋值，<code>setClass</code>方法内部包含一些宏定义，主要区分是否开启<code>isa签名</code>，根据签名模式的不同决定是否需要进行指针验证（<code>ptrauth</code>）。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Set the class field in an isa. Takes both the class to set and</span></span><br><span class="line"><span class="comment">// a pointer to the object where the isa will ultimately be used.</span></span><br><span class="line"><span class="comment">// This is necessary to get the pointer signing right.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// Note: this method does not support setting an indexed isa. When</span></span><br><span class="line"><span class="comment">// indexed isas are in use, it can only be used to set the class of a</span></span><br><span class="line"><span class="comment">// raw isa.</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="type">void</span></span></span><br><span class="line"><span class="function"><span class="title">isa_t::setClass</span><span class="params">(Class newCls, UNUSED_WITHOUT_PTRAUTH objc_object *obj)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// Match the conditional in isa.h.</span></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> __has_feature(ptrauth_calls) || TARGET_OS_SIMULATOR</span></span><br><span class="line"><span class="meta">#   <span class="keyword">if</span> ISA_SIGNING_SIGN_MODE == ISA_SIGNING_SIGN_NONE</span></span><br><span class="line">    <span class="comment">// No signing, just use the raw pointer.</span></span><br><span class="line">    <span class="type">uintptr_t</span> signedCls = (<span class="type">uintptr_t</span>)newCls;</span><br><span class="line"></span><br><span class="line"><span class="meta">#   <span class="keyword">elif</span> ISA_SIGNING_SIGN_MODE == ISA_SIGNING_SIGN_ONLY_SWIFT</span></span><br><span class="line">    <span class="comment">// We&#x27;re only signing Swift classes. Non-Swift classes just use</span></span><br><span class="line">    <span class="comment">// the raw pointer</span></span><br><span class="line">    <span class="type">uintptr_t</span> signedCls = (<span class="type">uintptr_t</span>)newCls;</span><br><span class="line">    <span class="keyword">if</span> (newCls-&gt;<span class="built_in">isSwiftStable</span>())</span><br><span class="line">        signedCls = (<span class="type">uintptr_t</span>)<span class="built_in">ptrauth_sign_unauthenticated</span>((<span class="type">void</span> *)newCls, ISA_SIGNING_KEY, <span class="built_in">ptrauth_blend_discriminator</span>(obj, ISA_SIGNING_DISCRIMINATOR));</span><br><span class="line"></span><br><span class="line"><span class="meta">#   <span class="keyword">elif</span> ISA_SIGNING_SIGN_MODE == ISA_SIGNING_SIGN_ALL</span></span><br><span class="line">    <span class="comment">// We&#x27;re signing everything</span></span><br><span class="line">    <span class="type">uintptr_t</span> signedCls = (<span class="type">uintptr_t</span>)<span class="built_in">ptrauth_sign_unauthenticated</span>((<span class="type">void</span> *)newCls, ISA_SIGNING_KEY, <span class="built_in">ptrauth_blend_discriminator</span>(obj, ISA_SIGNING_DISCRIMINATOR));</span><br><span class="line"></span><br><span class="line"><span class="meta">#   <span class="keyword">else</span></span></span><br><span class="line"><span class="meta">#       <span class="keyword">error</span> Unknown isa signing mode.</span></span><br><span class="line"><span class="meta">#   <span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    shiftcls_and_sig = signedCls &gt;&gt; <span class="number">3</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">elif</span> SUPPORT_INDEXED_ISA</span></span><br><span class="line">    <span class="comment">// Indexed isa only uses this method to set a raw pointer class.</span></span><br><span class="line">    <span class="comment">// Setting an indexed class is handled separately.</span></span><br><span class="line">    cls = newCls;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">else</span> <span class="comment">// Nonpointer isa, no ptrauth</span></span></span><br><span class="line">    shiftcls = (<span class="type">uintptr_t</span>)newCls &gt;&gt; <span class="number">3</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="getClass"><a href="#getClass" class="headerlink" title="getClass"></a>getClass</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> Class</span></span><br><span class="line"><span class="function"><span class="title">isa_t::getClass</span><span class="params">(MAYBE_UNUSED_AUTHENTICATED_PARAM <span class="type">bool</span> authenticated)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> SUPPORT_INDEXED_ISA</span></span><br><span class="line">    <span class="keyword">return</span> cls;</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line"></span><br><span class="line">    <span class="type">uintptr_t</span> clsbits = bits;</span><br><span class="line"></span><br><span class="line"><span class="meta">#   <span class="keyword">if</span> __has_feature(ptrauth_calls)</span></span><br><span class="line"><span class="meta">#       <span class="keyword">if</span> ISA_SIGNING_AUTH_MODE == ISA_SIGNING_AUTH</span></span><br><span class="line">    <span class="comment">// Most callers aren&#x27;t security critical, so skip the</span></span><br><span class="line">    <span class="comment">// authentication unless they ask for it. Message sending and</span></span><br><span class="line">    <span class="comment">// cache filling are protected by the auth code in msgSend.</span></span><br><span class="line">    <span class="keyword">if</span> (authenticated) &#123;</span><br><span class="line">        <span class="comment">// Mask off all bits besides the class pointer and signature.</span></span><br><span class="line">        clsbits &amp;= ISA_MASK;</span><br><span class="line">        <span class="keyword">if</span> (clsbits == <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">return</span> Nil;</span><br><span class="line">        clsbits = (<span class="type">uintptr_t</span>)<span class="built_in">ptrauth_auth_data</span>((<span class="type">void</span> *)clsbits, ISA_SIGNING_KEY, <span class="built_in">ptrauth_blend_discriminator</span>(<span class="keyword">this</span>, ISA_SIGNING_DISCRIMINATOR));</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// If not authenticating, strip using the precomputed class mask.</span></span><br><span class="line">        clsbits &amp;= objc_debug_isa_class_mask;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#       <span class="keyword">else</span></span></span><br><span class="line">    <span class="comment">// If not authenticating, strip using the precomputed class mask.</span></span><br><span class="line">    clsbits &amp;= objc_debug_isa_class_mask;</span><br><span class="line"><span class="meta">#       <span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#   <span class="keyword">else</span></span></span><br><span class="line">    clsbits &amp;= ISA_MASK;</span><br><span class="line"><span class="meta">#   <span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> (Class)clsbits;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>理解了设置<code>cls</code>的流程，获取的流程就很好理解了，拿到<code>isa</code>中的所有字节，与<code>ISA_MASK</code>进行按位与，即可拿到<code>cls</code>字段对应的字节。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/isa/" rel="tag"># isa</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/05/14/Objc%E5%BA%95%E5%B1%82Alloc%E6%B5%81%E7%A8%8B/" rel="prev" title="Objc底层Alloc流程">
+                  <i class="fa fa-angle-left"></i> Objc底层Alloc流程
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">KamHungLeung</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/sidebar.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
