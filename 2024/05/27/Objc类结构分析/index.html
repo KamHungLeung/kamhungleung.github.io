@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.2.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha256-XOqroi11tY4EFQMR9ZYwZWKj5ZXiftSx36RRuC3anlA=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.20.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="Objc类结构分析objc_class &amp; objc_objectobjc_class是个结构体，所有的Class都是以它为模版创建的，以下是底层定义的一部分: 123456789101112struct objc_class : objc_object &#123;  objc_class(const objc_class&amp;) &#x3D; delete;  objc_class(objc">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Objc类结构分析">
+<meta property="og:url" content="http://example.com/2024/05/27/Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="Hung&#39;s Tech Tips">
+<meta property="og:description" content="Objc类结构分析objc_class &amp; objc_objectobjc_class是个结构体，所有的Class都是以它为模版创建的，以下是底层定义的一部分: 123456789101112struct objc_class : objc_object &#123;  objc_class(const objc_class&amp;) &#x3D; delete;  objc_class(objc">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2024/05/27/Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/isa.png">
+<meta property="article:published_time" content="2024-05-27T07:15:39.273Z">
+<meta property="article:modified_time" content="2024-06-03T07:50:12.317Z">
+<meta property="article:author" content="KamHungLeung">
+<meta property="article:tag" content="Class">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2024/05/27/Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/isa.png">
+
+
+<link rel="canonical" href="http://example.com/2024/05/27/Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2024/05/27/Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/","path":"2024/05/27/Objc类结构分析/","title":"Objc类结构分析"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Objc类结构分析 | Hung's Tech Tips</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Hung's Tech Tips</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Walk it, like I talk it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">Objc类结构分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#objc-class-objc-object"><span class="nav-number">1.1.</span> <span class="nav-text">objc_class &amp; objc_object</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B1%BB%E4%BF%A1%E6%81%AF%E4%B8%AD%E7%9A%84%E5%86%85%E5%AE%B9"><span class="nav-number">1.2.</span> <span class="nav-text">类信息中的内容</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96bits"><span class="nav-number">1.2.1.</span> <span class="nav-text">获取bits</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B1%9E%E6%80%A7%E5%88%97%E8%A1%A8%E3%80%81%E6%96%B9%E6%B3%95%E5%88%97%E8%A1%A8"><span class="nav-number">1.2.2.</span> <span class="nav-text">属性列表、方法列表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%88%90%E5%91%98%E5%8F%98%E9%87%8F"><span class="nav-number">1.2.3.</span> <span class="nav-text">成员变量</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">KamHungLeung</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/27/Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="KamHungLeung">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hung's Tech Tips">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Objc类结构分析 | Hung's Tech Tips">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Objc类结构分析
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-05-27 15:15:39" itemprop="dateCreated datePublished" datetime="2024-05-27T15:15:39+08:00">2024-05-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2024-06-03 15:50:12" itemprop="dateModified" datetime="2024-06-03T15:50:12+08:00">2024-06-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Objc/" itemprop="url" rel="index"><span itemprop="name">Objc</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Objc类结构分析"><a href="#Objc类结构分析" class="headerlink" title="Objc类结构分析"></a>Objc类结构分析</h2><h3 id="objc-class-objc-object"><a href="#objc-class-objc-object" class="headerlink" title="objc_class &amp; objc_object"></a>objc_class &amp; objc_object</h3><p><code>objc_class</code>是个结构体，所有的<code>Class</code>都是以它为模版创建的，以下是底层定义的一部分:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">objc_class</span> : objc_object &#123;</span><br><span class="line">  <span class="built_in">objc_class</span>(<span class="type">const</span> objc_class&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">  <span class="built_in">objc_class</span>(objc_class&amp;&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">  <span class="type">void</span> <span class="keyword">operator</span>=(<span class="type">const</span> objc_class&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">  <span class="type">void</span> <span class="keyword">operator</span>=(objc_class&amp;&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">    <span class="comment">// Class ISA;</span></span><br><span class="line">    Class superclass;</span><br><span class="line">    <span class="type">cache_t</span> cache;             <span class="comment">// formerly cache pointer and vtable</span></span><br><span class="line">    <span class="type">class_data_bits_t</span> bits;    <span class="comment">// class_rw_t * plus custom rr/alloc flags</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// ....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<p><code>objc_object</code>的定义如下:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Represents an instance of a class.</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">objc_object</span> &#123;</span><br><span class="line">    Class _Nonnull isa  OBJC_ISA_AVAILABILITY;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到<code>objc_class</code>这个结构体是继承自<code>objc_object</code>的，所以在OC里面所有对象、类和元类都有<code>isa</code>这个属性，这里要注意<code>isa</code>和<code>superclass</code>两个属性要区分开，我们可以看这个著名的走位图。</p>
+<p><img src="/2024/05/27/Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/isa.png" alt="isa &amp; superClass"></p>
+<h3 id="类信息中的内容"><a href="#类信息中的内容" class="headerlink" title="类信息中的内容"></a>类信息中的内容</h3><p><code>struct</code>在内存中所有成员变量都是放在一块的，根据内存对齐的规则依次排布，这就为我们提供了在<code>lldb</code>中探索类信息的手段，我们可以通过获取类的<code>首地址</code>加上偏移，即可访问各字段的值。</p>
+<h4 id="获取bits"><a href="#获取bits" class="headerlink" title="获取bits"></a>获取bits</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">cache_t</span> &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    explicit_atomic&lt;<span class="type">uintptr_t</span>&gt; _bucketsAndMaybeMask;</span><br><span class="line">    <span class="keyword">union</span> &#123;</span><br><span class="line">        <span class="keyword">struct</span> &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> CACHE_MASK_STORAGE == CACHE_MASK_STORAGE_OUTLINED &amp;&amp; !__LP64__</span></span><br><span class="line">            explicit_atomic&lt;<span class="type">mask_t</span>&gt;    _mask;</span><br><span class="line">            <span class="type">uint16_t</span>                   _occupied;</span><br><span class="line"><span class="meta">#<span class="keyword">elif</span> CACHE_MASK_STORAGE == CACHE_MASK_STORAGE_OUTLINED &amp;&amp; __LP64__</span></span><br><span class="line">            explicit_atomic&lt;<span class="type">mask_t</span>&gt;    _mask;</span><br><span class="line">            <span class="type">uint16_t</span>                   _occupied;</span><br><span class="line">            <span class="type">uint16_t</span>                   _flags;</span><br><span class="line"><span class="meta">#   <span class="keyword">define</span> CACHE_T_HAS_FLAGS 1</span></span><br><span class="line"><span class="meta">#<span class="keyword">elif</span> __LP64__</span></span><br><span class="line">            <span class="type">uint32_t</span>                   _unused;</span><br><span class="line">            <span class="type">uint16_t</span>                   _occupied;</span><br><span class="line">            <span class="type">uint16_t</span>                   _flags;</span><br><span class="line"><span class="meta">#   <span class="keyword">define</span> CACHE_T_HAS_FLAGS 1</span></span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line">            <span class="type">uint16_t</span>                   _occupied;</span><br><span class="line">            <span class="type">uint16_t</span>                   _flags;</span><br><span class="line"><span class="meta">#   <span class="keyword">define</span> CACHE_T_HAS_FLAGS 1</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">        &#125;;</span><br><span class="line">        explicit_atomic&lt;<span class="type">preopt_cache_t</span> *&gt; _originalPreoptCache;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>按照上面的思路，通过偏移获取想要打印的字段，偏移的计算逻辑如下，<code>isa</code>占8字节，<code>superclass</code>占8字节，<code>cache_t</code>的大小则需要进一步分析。抛开<code>static</code>的成员变量，<code>union</code>为8位，<code>_bucketsAndMaybeMask</code>为无符号整形，因此也是8位，所以共16位。得到偏移后我们就可以观察<code>bits</code>中存储的信息了。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取类的首地址</span></span><br><span class="line">(lldb) p/<span class="function">x <span class="title">NSClassFromString</span><span class="params">(@<span class="string">&quot;KHPerson&quot;</span>)</span></span></span><br><span class="line"><span class="function"><span class="params">(Class _Nullable)</span> 0x00000001000081e8 KHPerson</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="comment">// 首地址加上偏移 1000081e8 -&gt; 100008208</span></span></span><br><span class="line"><span class="function"><span class="params">(lldb)</span> expr <span class="type">class_data_bits_t</span> * $b </span>= (<span class="type">class_data_bits_t</span> *)<span class="number">0x0000000100008208</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 用class_data_bits_t结构提供的方法data获取bits</span></span><br><span class="line">(lldb) p $b-&gt;<span class="built_in">data</span>()</span><br><span class="line">(<span class="type">class_rw_t</span> *) <span class="number">0x00006000002cc100</span></span><br><span class="line"></span><br><span class="line">(lldb) p *(<span class="type">class_rw_t</span> *)<span class="number">0x00006000002cc100</span></span><br><span class="line">(<span class="type">class_rw_t</span>) &#123;</span><br><span class="line">  flags = <span class="number">2148007936</span></span><br><span class="line">  witness = <span class="number">0</span></span><br><span class="line">  ro_or_rw_ext = &#123;</span><br><span class="line">    std::__1::atomic&lt;<span class="type">unsigned</span> <span class="type">long</span>&gt; = &#123;</span><br><span class="line">      Value = <span class="number">4295000232</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  firstSubclass = KHTeacher</span><br><span class="line">  nextSiblingClass = NSProcessInfo</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>拿到<code>class_rw_t</code>这个结构后，可以进一步探索属性表和方法表了。</p>
+<h4 id="属性列表、方法列表"><a href="#属性列表、方法列表" class="headerlink" title="属性列表、方法列表"></a>属性列表、方法列表</h4><p>在<code>class_rw_t</code>结构里，有提供获取当前类属性和实例方法的函数，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">class_rw_t</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">const</span> <span class="type">method_array_t</span> <span class="title">methods</span><span class="params">()</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">        <span class="keyword">auto</span> alternates = <span class="built_in">methodAlternates</span>();</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">auto</span> *array = alternates.array)</span><br><span class="line">            <span class="keyword">return</span> *array;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">auto</span> *list = alternates.list)</span><br><span class="line">            <span class="keyword">return</span> <span class="type">method_array_t</span>&#123;list&#125;;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">auto</span> *relativeList = alternates.relativeList)</span><br><span class="line">            <span class="keyword">return</span> <span class="type">method_array_t</span>&#123;relativeList&#125;;</span><br><span class="line">        <span class="keyword">return</span> <span class="type">method_array_t</span>&#123;&#125;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">const</span> <span class="type">property_array_t</span> <span class="title">properties</span><span class="params">()</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">        <span class="keyword">auto</span> v = <span class="built_in">get_ro_or_rwe</span>();</span><br><span class="line">        <span class="keyword">if</span> (v.<span class="built_in">is</span>&lt;<span class="type">class_rw_ext_t</span> *&gt;()) &#123;</span><br><span class="line">            <span class="keyword">return</span> v.<span class="built_in">get</span>&lt;<span class="type">class_rw_ext_t</span> *&gt;(&amp;ro_or_rw_ext)-&gt;properties;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">auto</span> &amp;baseProperties = v.<span class="built_in">get</span>&lt;<span class="type">const</span> <span class="type">class_ro_t</span> *&gt;(&amp;ro_or_rw_ext)-&gt;baseProperties;</span><br><span class="line">            <span class="keyword">return</span> <span class="type">property_array_t</span>&#123;baseProperties&#125;;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">const</span> <span class="type">protocol_array_t</span> <span class="title">protocols</span><span class="params">()</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">        <span class="keyword">auto</span> v = <span class="built_in">get_ro_or_rwe</span>();</span><br><span class="line">        <span class="keyword">if</span> (v.<span class="built_in">is</span>&lt;<span class="type">class_rw_ext_t</span> *&gt;()) &#123;</span><br><span class="line">            <span class="keyword">return</span> v.<span class="built_in">get</span>&lt;<span class="type">class_rw_ext_t</span> *&gt;(&amp;ro_or_rw_ext)-&gt;protocols;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">auto</span> &amp;baseProtocols = v.<span class="built_in">get</span>&lt;<span class="type">const</span> <span class="type">class_ro_t</span> *&gt;(&amp;ro_or_rw_ext)-&gt;baseProtocols;</span><br><span class="line">            <span class="keyword">return</span> <span class="type">protocol_array_t</span>&#123;baseProtocols&#125;;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以来验证一下属性是否真的存在<code>property_array_t</code>这个结构中，方法列表的验证也类似，这里就不重复了。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取class_rw_t的方法与上面一样，这里就省略前面的步骤了</span></span><br><span class="line">(lldb) expr <span class="type">class_rw_t</span> *$b = $a-&gt;<span class="built_in">data</span>()</span><br><span class="line">(lldb) p *$<span class="built_in">b</span></span><br><span class="line">(<span class="type">class_rw_t</span>) &#123;</span><br><span class="line">  flags = <span class="number">2148007936</span></span><br><span class="line">  witness = <span class="number">0</span></span><br><span class="line">  ro_or_rw_ext = &#123;</span><br><span class="line">    std::__1::atomic&lt;<span class="type">unsigned</span> <span class="type">long</span>&gt; = &#123;</span><br><span class="line">      Value = <span class="number">4295000232</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  firstSubclass = KHTeacher</span><br><span class="line">  nextSiblingClass = NSProcessInfo</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 用properties方法拿到属性列表</span></span><br><span class="line">(lldb) expr <span class="type">property_array_t</span> $ppA = (*$b).<span class="built_in">properties</span>()</span><br><span class="line"></span><br><span class="line"><span class="comment">// 用p/x打印出来可以看到里面只存了一个指针</span></span><br><span class="line">(lldb) p/x $<span class="built_in">ppA</span></span><br><span class="line">(<span class="type">property_array_t</span>) &#123;</span><br><span class="line">  list_array_tt&lt;<span class="type">property_t</span>, <span class="type">property_list_t</span>, RawPtr&gt; = &#123;</span><br><span class="line">    storage = (_value = <span class="number">0x0000000100008090</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 把这个指针转成property_list_t，用这个结构去获取里面的元素</span></span><br><span class="line"><span class="comment">// 可以看到count=1，与测试类的定义一致，</span></span><br><span class="line">(lldb) expr <span class="type">property_list_t</span> *$ppl = (<span class="type">property_list_t</span> *)<span class="number">0x0000000100008090</span></span><br><span class="line">(lldb) p *$<span class="built_in">ppl</span></span><br><span class="line">(<span class="type">property_list_t</span>) &#123;</span><br><span class="line">  entsize_list_tt&lt;<span class="type">property_t</span>, <span class="type">property_list_t</span>, <span class="number">0</span>, PointerModifierNop&gt; = (entsizeAndFlags = <span class="number">16</span>, count = <span class="number">1</span>)</span><br><span class="line">&#125;</span><br><span class="line">(lldb) <span class="built_in">p</span> (*$ppl).<span class="built_in">get</span>(<span class="number">0</span>)</span><br><span class="line">(<span class="type">property_t</span>)  (name = <span class="string">&quot;personName&quot;</span>, attributes = <span class="string">&quot;T@\&quot;NSString\&quot;,C,N,V_personName&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h4 id="成员变量"><a href="#成员变量" class="headerlink" title="成员变量"></a>成员变量</h4><p>那么问题来了，成员变量存在哪里呢？在<code>class_rw_t</code>里面，有一个方法<code>const class_ro_t *ro()</code>，引入了一个新的结构<code>class_ro_t</code>。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">class_ro_t</span> &#123;</span><br><span class="line">    <span class="type">uint32_t</span> flags;</span><br><span class="line">    <span class="type">uint32_t</span> instanceStart;</span><br><span class="line">    <span class="type">uint32_t</span> instanceSize;</span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> __LP64__</span></span><br><span class="line">    <span class="type">uint32_t</span> reserved;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">union</span> &#123;</span><br><span class="line">        <span class="type">const</span> <span class="type">uint8_t</span> * ivarLayout;</span><br><span class="line">        Class nonMetaclass;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    explicit_atomic&lt;<span class="type">const</span> <span class="type">char</span> *&gt; name;</span><br><span class="line">    objc::PointerUnion&lt;<span class="type">method_list_t</span>, <span class="type">relative_list_list_t</span>&lt;<span class="type">method_list_t</span>&gt;, <span class="type">method_list_t</span>::Ptrauth, <span class="type">method_list_t</span>::Ptrauth&gt; baseMethods;</span><br><span class="line">    objc::PointerUnion&lt;<span class="type">protocol_list_t</span>, <span class="type">relative_list_list_t</span>&lt;<span class="type">protocol_list_t</span>&gt;, PtrauthRaw, PtrauthRaw&gt; baseProtocols;</span><br><span class="line">    <span class="type">const</span> <span class="type">ivar_list_t</span> * ivars;</span><br><span class="line"></span><br><span class="line">    <span class="type">const</span> <span class="type">uint8_t</span> * weakIvarLayout;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到结构体中有一个<code>ivars</code>的变量，里面存放的就是成员变量，下面通过lldb进行一些验证：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取data段数据</span></span><br><span class="line">expr <span class="type">class_rw_t</span> *$rw = $bits-&gt;<span class="built_in">data</span>()</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取ro字段中ivars列表</span></span><br><span class="line">(lldb) expr <span class="type">class_ro_t</span> *$ro = (<span class="type">class_ro_t</span> *)(*$rw).<span class="built_in">ro</span>()</span><br><span class="line">(lldb) expr <span class="type">const</span> <span class="type">ivar_list_t</span> *$ivars = (*$ro).ivars</span><br><span class="line"></span><br><span class="line"><span class="comment">// 通过打印可以看到列表中有两个数据</span></span><br><span class="line">(lldb) p/x *$<span class="built_in">ivars</span></span><br><span class="line">(<span class="type">const</span> <span class="type">ivar_list_t</span>) &#123;</span><br><span class="line">  entsize_list_tt&lt;<span class="type">ivar_t</span>, <span class="type">ivar_list_t</span>, <span class="number">0</span>, PointerModifierNop&gt; = (entsizeAndFlags = <span class="number">0x00000020</span>, count = <span class="number">0x00000002</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">(lldb) <span class="built_in">p</span> (*$ivars).<span class="built_in">get</span>(<span class="number">0</span>)</span><br><span class="line">(<span class="type">ivar_t</span>) &#123;</span><br><span class="line">  offset = <span class="number">0x00000001000081b8</span></span><br><span class="line">  name = <span class="number">0x0000000100003f35</span> <span class="string">&quot;hobby&quot;</span></span><br><span class="line">  type = <span class="number">0x0000000100003f80</span> <span class="string">&quot;@\&quot;NSString\&quot;&quot;</span></span><br><span class="line">  alignment_raw = <span class="number">3</span></span><br><span class="line">  size = <span class="number">8</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">(lldb) <span class="built_in">p</span> (*$ivars).<span class="built_in">get</span>(<span class="number">1</span>)</span><br><span class="line">(<span class="type">ivar_t</span>) &#123;</span><br><span class="line">  offset = <span class="number">0x00000001000081bc</span></span><br><span class="line">  name = <span class="number">0x0000000100003f3b</span> <span class="string">&quot;_personName&quot;</span></span><br><span class="line">  type = <span class="number">0x0000000100003f80</span> <span class="string">&quot;@\&quot;NSString\&quot;&quot;</span></span><br><span class="line">  alignment_raw = <span class="number">3</span></span><br><span class="line">  size = <span class="number">8</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这里测试用的类<code>KHPerson</code>里面只定义了一个成员变量<code>hobby</code>和一个属性<code>personName</code>，而打印出来的<code>ivars</code>列表有两条数据，所以可以得出一个结论：</p>
+<ul>
+<li>通过<code>&#123;&#125;</code>定义的成员变量，会出现在成员变量表<code>ivars</code>中，属性定义的变量也会在这里面出现；</li>
+<li>通过<code>@property</code>定义的属性，会存在属性列表中，里面不包含成员变量。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Class/" rel="tag"># Class</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/05/22/Objc%E7%B1%BB%E4%B8%8Eisa/" rel="prev" title="Objc类与isa">
+                  <i class="fa fa-angle-left"></i> Objc类与isa
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">KamHungLeung</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/sidebar.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

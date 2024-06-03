@@ -113,7 +113,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-count">3</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -122,7 +122,7 @@
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">3</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -139,6 +139,99 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/27/Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="KamHungLeung">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hung's Tech Tips">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | Hung's Tech Tips">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/05/27/Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/" class="post-title-link" itemprop="url">Objc类结构分析</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-05-27 15:15:39" itemprop="dateCreated datePublished" datetime="2024-05-27T15:15:39+08:00">2024-05-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2024-06-03 15:50:12" itemprop="dateModified" datetime="2024-06-03T15:50:12+08:00">2024-06-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Objc/" itemprop="url" rel="index"><span itemprop="name">Objc</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Objc类结构分析"><a href="#Objc类结构分析" class="headerlink" title="Objc类结构分析"></a>Objc类结构分析</h2><h3 id="objc-class-objc-object"><a href="#objc-class-objc-object" class="headerlink" title="objc_class &amp; objc_object"></a>objc_class &amp; objc_object</h3><p><code>objc_class</code>是个结构体，所有的<code>Class</code>都是以它为模版创建的，以下是底层定义的一部分:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">objc_class</span> : objc_object &#123;</span><br><span class="line">  <span class="built_in">objc_class</span>(<span class="type">const</span> objc_class&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">  <span class="built_in">objc_class</span>(objc_class&amp;&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">  <span class="type">void</span> <span class="keyword">operator</span>=(<span class="type">const</span> objc_class&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">  <span class="type">void</span> <span class="keyword">operator</span>=(objc_class&amp;&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">    <span class="comment">// Class ISA;</span></span><br><span class="line">    Class superclass;</span><br><span class="line">    <span class="type">cache_t</span> cache;             <span class="comment">// formerly cache pointer and vtable</span></span><br><span class="line">    <span class="type">class_data_bits_t</span> bits;    <span class="comment">// class_rw_t * plus custom rr/alloc flags</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// ....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/05/27/Objc%E7%B1%BB%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
